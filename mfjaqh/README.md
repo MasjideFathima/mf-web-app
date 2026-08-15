@@ -80,6 +80,58 @@ streamlit run app.py
 - Streamlit Community Cloud: unlimited public apps, generous compute for
   low-traffic apps like this
 
+## WhatsApp Notifications (donor confirmation on approval)
+
+When an admin approves an income entry, the donor gets an automatic WhatsApp
+message using Meta's official Cloud API. No paid BSP needed - Meta charges
+only a tiny per-message fee (~₹0.12 in India), no monthly platform cost.
+
+### One-time setup
+
+1. Go to https://developers.facebook.com → create a free developer account.
+2. **My Apps > Create App** → type = **Business**.
+3. Inside the app, add the **WhatsApp** product.
+4. On the API Setup page, note down:
+   - **Phone Number ID**
+   - The **temporary access token** (only valid 24h, for testing only)
+5. Click **Add phone number** and register a real phone number you own as
+   your WhatsApp Business number (must not already be an active WhatsApp
+   number - if it is, remove it from WhatsApp first). This lets you message
+   *any* number dynamically, not just Meta's 5 test recipients.
+6. Create a message template (Meta App Dashboard > WhatsApp > Message
+   Templates > Create Template):
+   - Name: `donation_receipt` (or update `WHATSAPP_TEMPLATE_NAME` in secrets
+     to match whatever you name it)
+   - Category: **Utility**
+   - Body example:
+     ```
+     Dear {{1}}, your {{2}} of ₹{{3}} (Receipt #{{4}}) has been recorded.
+     Jazakallah Khair - Masjid-e-Fathima JAQH, Salem-1
+     ```
+   - Submit for approval (usually minutes to a few hours)
+7. Generate a **permanent token**: Meta Business Settings > Users > System
+   Users > create a system user > generate token with `whatsapp_business_messaging`
+   permission. Use this (not the 24h temporary one) in your secrets.
+
+### Add to Streamlit secrets
+
+```toml
+WHATSAPP_PHONE_NUMBER_ID = "123456789012345"
+WHATSAPP_ACCESS_TOKEN = "your-permanent-system-user-token"
+WHATSAPP_TEMPLATE_NAME = "donation_receipt"
+```
+
+### Notes
+
+- No business document verification is required for up to **250
+  business-initiated conversations per 24 hours** - more than enough for a
+  single masjid's donation volume.
+- If `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_ACCESS_TOKEN` aren't set, the app
+  simply skips sending and shows a warning instead of crashing - so you can
+  keep using the app for tracking before WhatsApp is fully set up.
+- Phone numbers are auto-normalized assuming India (+91); a plain 10-digit
+  number like `9876543210` is converted to `919876543210` automatically.
+
 ## Adding/removing admins or members later
 
 Just add/edit rows directly in the Supabase **Table Editor > users** table —
