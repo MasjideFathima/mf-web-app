@@ -59,6 +59,12 @@ def get_transactions(status: str | None = None, submitted_by: str | None = None)
     return query.order("txn_date", desc=True).execute().data
 
 
+def get_transaction(txn_id: str):
+    client = get_service_client()
+    result = client.table("transactions").select("*, categories(name, type)").eq("id", txn_id).execute()
+    return result.data[0] if result.data else None
+
+
 def approve_transaction(txn_id: str, approver_id: str):
     client = get_service_client()
     return client.table("transactions").update({
