@@ -6,6 +6,12 @@ from utils.whatsapp import send_whatsapp_notification
 require_admin()
 st.title("✅ Pending Approvals")
 
+# Show feedback from the previous action (stored before rerun, since rerun
+# would otherwise wipe out st.success/st.warning before you could see it)
+if "approval_feedback" in st.session_state:
+    level, text = st.session_state.pop("approval_feedback")
+    getattr(st, level)(text)
+
 pending = get_transactions(status="pending")
 
 if not pending:
@@ -45,9 +51,14 @@ for txn in pending:
                     receipt_number=txn.get("receipt_number"),
                     category_name=cat_name,
                 )
-                if not sent:
-                    st.warning(f"Approved, but WhatsApp notification failed: {msg}")
+                if sent:
+                    st.session_state["approval_feedback"] = ("success", "Approved and WhatsApp confirmation sent to donor.")
+                else:
+                    st.session_state["approval_feedback"] = ("warning", f"Approved, but WhatsApp notification failed: {msg}")
+            else:
+                st.session_state["approval_feedback"] = ("success", "Approved.")
             st.rerun()
         if c2.button("Reject", key=f"reject_{txn['id']}"):
             reject_transaction(txn["id"], st.session_state["user_id"])
+            st.session_state["approval_feedback"] = ("info", "Rejected.")
             st.rerun()
