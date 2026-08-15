@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.auth import require_admin
 from utils.db import get_transactions, approve_transaction, reject_transaction
+from utils.whatsapp import send_whatsapp_notification
 
 require_admin()
 st.title("✅ Pending Approvals")
@@ -23,6 +24,8 @@ for txn in pending:
             st.write(f"Date: {txn['txn_date']}")
             if txn.get("receipt_number"):
                 st.write(f"Receipt #: {txn['receipt_number']}")
+            if txn.get("donor_name"):
+                st.write(f"Donor: {txn['donor_name']} ({txn.get('donor_phone', 'no phone')})")
             st.write(f"Submitted by: {submitter}")
             if txn.get("description"):
                 st.write(f"Notes: {txn['description']}")
@@ -33,6 +36,17 @@ for txn in pending:
         c1, c2 = st.columns(2)
         if c1.button("Approve", key=f"approve_{txn['id']}"):
             approve_transaction(txn["id"], st.session_state["user_id"])
+            if txn["type"] == "income" and txn.get("donor_phone"):
+                sent, msg = send_whatsapp_notification(
+                    phone=txn["donor_phone"],
+                    donor_name=txn.get("donor_name"),
+                    txn_type=txn["type"],
+                    amount=float(txn["amount"]),
+                    receipt_number=txn.get("receipt_number"),
+                    category_name=cat_name,
+                )
+                if not sent:
+                    st.warning(f"Approved, but WhatsApp notification failed: {msg}")
             st.rerun()
         if c2.button("Reject", key=f"reject_{txn['id']}"):
             reject_transaction(txn["id"], st.session_state["user_id"])
