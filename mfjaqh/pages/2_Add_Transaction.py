@@ -3,6 +3,7 @@ import uuid
 from datetime import date
 from utils.auth import require_login, is_admin
 from utils.db import get_categories, insert_transaction, upload_photo, receipt_number_exists
+from utils.whatsapp import send_whatsapp_notification
 
 require_login()
 st.title("➕ Add Transaction")
@@ -16,11 +17,18 @@ with st.form("add_txn_form", clear_on_submit=True):
     amount = st.number_input("Amount (₹)", min_value=0.0, step=1.0)
     txn_date = st.date_input("Date", value=date.today())
     receipt_number = ""
+    donor_name = ""
+    donor_phone = ""
     if txn_type == "income":
         receipt_number = st.text_input(
             "Receipt Number (as written on the physical receipt book)"
         )
-    description = st.text_area("Description / Notes", placeholder="e.g. Donor name, purpose, etc.")
+        donor_name = st.text_input("Donor Name")
+        donor_phone = st.text_input(
+            "Donor Mobile Number (for WhatsApp confirmation once approved)",
+            placeholder="e.g. 9876543210"
+        )
+    description = st.text_area("Description / Notes", placeholder="e.g. Purpose, etc.")
     photo = st.file_uploader("Upload photo of receipt/item (optional)", type=["jpg", "jpeg", "png"])
 
     submitted = st.form_submit_button("Submit")
@@ -47,6 +55,8 @@ with st.form("add_txn_form", clear_on_submit=True):
             "amount": amount,
             "txn_date": txn_date.isoformat(),
             "receipt_number": receipt_number or None,
+            "donor_name": donor_name or None,
+            "donor_phone": donor_phone or None,
             "description": description,
             "photo_url": photo_url,
             "submitted_by": st.session_state["user_id"],
@@ -56,5 +66,18 @@ with st.form("add_txn_form", clear_on_submit=True):
 
         if is_admin():
             st.success("Transaction recorded and approved.")
+            if txn_type == "income" and donor_phone:
+                sent, msg = send_whatsapp_notification(
+                    phone=donor_phone,
+                    donor_name=donor_name,
+                    txn_type=txn_type,
+                    amount=amount,
+                    receipt_number=receipt_number,
+                    category_name=category_name,
+                )
+                if sent:
+                    st.info("WhatsApp confirmation sent to donor.")
+                else:
+                    st.warning(f"Recorded, but WhatsApp notification failed: {msg}")
         else:
             st.success("Submitted! An admin will review and approve it.")
