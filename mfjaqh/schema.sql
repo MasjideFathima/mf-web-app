@@ -40,6 +40,8 @@ create table if not exists public.transactions (
     amount numeric(12,2) not null check (amount > 0),
     txn_date date not null,
     receipt_number text,          -- only meaningful for income, free text
+    donor_name text,               -- name of person donating (for income entries)
+    donor_phone text,              -- WhatsApp/mobile number to notify on approval
     description text,
     photo_url text,                -- link into Supabase Storage, not a blob
     status text not null default 'pending' check (status in ('pending','approved','rejected')),
@@ -84,3 +86,10 @@ create policy "members can view their own transactions"
 -- Note: Admin pages in the app use the Supabase service_role key (server-side
 -- only, never exposed to the browser) which bypasses RLS entirely, so admins
 -- can see/approve/reject everything regardless of these member-scoped policies.
+
+-- ============================================================
+-- If you already ran the schema.sql before adding WhatsApp support,
+-- run just this block to add the new columns without recreating tables:
+-- ============================================================
+-- alter table public.transactions add column if not exists donor_name text;
+-- alter table public.transactions add column if not exists donor_phone text;
