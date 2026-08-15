@@ -45,6 +45,7 @@ def send_whatsapp_notification(phone: str, donor_name: str, txn_type: str,
     phone_number_id = st.secrets.get("WHATSAPP_PHONE_NUMBER_ID")
     access_token = st.secrets.get("WHATSAPP_ACCESS_TOKEN")
     template_name = st.secrets.get("WHATSAPP_TEMPLATE_NAME", "donation_receipt")
+    template_lang = st.secrets.get("WHATSAPP_TEMPLATE_LANG", "en_US")
 
     if not phone_number_id or not access_token:
         return False, "WhatsApp not configured (missing secrets), skipped."
@@ -55,13 +56,17 @@ def send_whatsapp_notification(phone: str, donor_name: str, txn_type: str,
         "Content-Type": "application/json",
     }
 
-    # Template placeholders, in order: {{1}} name, {{2}} type+category, {{3}} amount, {{4}} receipt no.
-    body_params = [
-        {"type": "text", "text": donor_name or "Donor"},
-        {"type": "text", "text": category_name},
-        {"type": "text", "text": f"{amount:,.2f}"},
-        {"type": "text", "text": receipt_number or "N/A"},
-    ]
+    # hello_world (Meta's default test template) takes zero parameters.
+    # Your own approved template (e.g. donation_receipt) takes the 4 below.
+    components = []
+    if template_name != "hello_world":
+        body_params = [
+            {"type": "text", "text": donor_name or "Donor"},
+            {"type": "text", "text": category_name},
+            {"type": "text", "text": f"{amount:,.2f}"},
+            {"type": "text", "text": receipt_number or "N/A"},
+        ]
+        components = [{"type": "body", "parameters": body_params}]
 
     payload = {
         "messaging_product": "whatsapp",
@@ -69,8 +74,8 @@ def send_whatsapp_notification(phone: str, donor_name: str, txn_type: str,
         "type": "template",
         "template": {
             "name": template_name,
-            "language": {"code": "en"},
-            "components": [{"type": "body", "parameters": body_params}],
+            "language": {"code": template_lang},
+            "components": components,
         },
     }
 
