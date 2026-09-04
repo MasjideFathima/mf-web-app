@@ -91,6 +91,38 @@ def receipt_number_exists(receipt_number: str) -> bool:
     return len(result.data) > 0
 
 
+def delete_transaction(txn_id: str):
+    """Deletes a single transaction. Also attempts to remove its photo from
+    storage if one exists (best-effort - won't fail the delete if it can't)."""
+    client = get_service_client()
+    txn = get_transaction(txn_id)
+    if txn and txn.get("photo_url"):
+        _delete_photo_by_url(txn["photo_url"])
+    return client.table("transactions").delete().eq("id", txn_id).execute()
+
+
+def delete_transactions(txn_ids: list[str]):
+    """Bulk delete. Cleans up each photo first, then deletes all rows in one call."""
+    if not txn_ids:
+        return None
+    client = get_service_client()
+    for txn_id in txn_ids:
+        txn = get_transaction(txn_id)
+        if txn and txn.get("photo_url"):
+            _delete_photo_by_url(txn["photo_url"])
+    return client.table("transactions").delete().in_("id", txn_ids).execute()
+
+
+def _delete_photo_by_url(photo_url: str):
+    """Best-effort removal of a photo from the receipts bucket given its public URL."""
+    try:
+        client = get_service_client()
+        path = photo_url.split(f"/{BUCKET_NAME}/")[-1]
+        client.storage.from_(BUCKET_NAME).remove([path])
+    except Exception:
+        pass  # Non-fatal - the DB row delete should still proceed.
+
+
 # ---------------------------------------------------------------------------
 # Photo storage (Supabase Storage bucket, not DB blobs)
 # ---------------------------------------------------------------------------
