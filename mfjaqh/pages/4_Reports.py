@@ -23,11 +23,35 @@ df["txn_date"] = pd.to_datetime(df["txn_date"])
 df["donor_name"] = df.get("donor_name", "").fillna("") if "donor_name" in df.columns else ""
 df["donor_phone"] = df.get("donor_phone", "").fillna("") if "donor_phone" in df.columns else ""
 
-col1, col2 = st.columns(2)
-start_date = col1.date_input("From", value=date.today() - timedelta(days=30))
-end_date = col2.date_input("To", value=date.today())
+if "report_filters" not in st.session_state:
+    st.session_state["report_filters"] = {
+        "start_date": date.today() - timedelta(days=30),
+        "end_date": date.today(),
+        "search": "",
+    }
 
-search = st.text_input("Search (donor name, receipt number)", placeholder="e.g. Ahmed or R-1023")
+with st.form("report_filter_form"):
+    col1, col2 = st.columns(2)
+    start_date_input = col1.date_input("From", value=st.session_state["report_filters"]["start_date"])
+    end_date_input = col2.date_input("To", value=st.session_state["report_filters"]["end_date"])
+    search_input = st.text_input(
+        "Search (donor name, receipt number)",
+        value=st.session_state["report_filters"]["search"],
+        placeholder="e.g. Ahmed or R-1023",
+    )
+    apply_clicked = st.form_submit_button("Search", type="primary")
+
+    if apply_clicked:
+        st.session_state["report_filters"] = {
+            "start_date": start_date_input,
+            "end_date": end_date_input,
+            "search": search_input,
+        }
+
+filters = st.session_state["report_filters"]
+start_date = filters["start_date"]
+end_date = filters["end_date"]
+search = filters["search"]
 
 mask = (df["txn_date"] >= pd.Timestamp(start_date)) & (df["txn_date"] <= pd.Timestamp(end_date))
 filtered = df.loc[mask, ["txn_date", "type", "category_name", "amount", "payment_method",
