@@ -257,6 +257,25 @@ def create_user_account(email: str, password: str, name: str, phone: str, role: 
     return True, "User created successfully."
 
 
+def count_admins() -> int:
+    client = get_service_client()
+    result = client.table("users").select("id", count="exact").eq("role", "admin").execute()
+    return result.count or 0
+
+
+def delete_user_account(user_id: str) -> tuple[bool, str]:
+    """Deletes the auth login. The public.users profile row is removed
+    automatically via ON DELETE CASCADE. Historical transactions the user
+    submitted/approved are kept, with submitted_by/approved_by set to NULL
+    (requires the schema.sql migration for those foreign keys)."""
+    client = get_service_client()
+    try:
+        client.auth.admin.delete_user(user_id)
+        return True, "User deleted."
+    except Exception as e:
+        return False, f"Could not delete user: {e}"
+
+
 def verify_password(email: str, password: str) -> bool:
     """Confirms a password is correct by attempting a real sign-in.
     Used before allowing a password change - never store/compare passwords ourselves."""
