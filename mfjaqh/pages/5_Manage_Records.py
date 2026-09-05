@@ -84,7 +84,7 @@ for txn in records:
 
         with c2:
             st.markdown(f"**{txn['type'].upper()} — {cat_name}**")
-            st.write(f"₹{float(txn['amount']):,.2f}  •  {txn['txn_date']}")
+            st.write(f"₹{float(txn['amount']):,.2f}  •  {txn['txn_date']}  •  {txn.get('payment_method', 'cash').title()}")
             if txn.get("receipt_number"):
                 st.caption(f"Receipt #: {txn['receipt_number']}")
             if txn.get("donor_name"):
