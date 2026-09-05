@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date as date_cls
+from datetime import date as date_cls, timedelta
 from utils.auth import require_admin
 from utils.db import get_transactions, delete_transaction, delete_transactions, update_transaction, get_categories
 
@@ -14,19 +14,38 @@ if "manage_feedback" in st.session_state:
     getattr(st, level)(text)
 
 # --- Filters ---
-col1, col2 = st.columns(2)
+col1, col2, col3, col4 = st.columns(4)
 status_filter = col1.selectbox("Status", ["approved", "pending", "rejected"], index=0)
 type_filter = col2.selectbox("Type", ["All", "income", "expense"])
+start_date = col3.date_input("From", value=date_cls.today() - timedelta(days=90))
+end_date = col4.date_input("To", value=date_cls.today())
 
 records = get_transactions(status=status_filter)
 if type_filter != "All":
     records = [r for r in records if r["type"] == type_filter]
+records = [
+    r for r in records
+    if r.get("txn_date") and start_date.isoformat() <= r["txn_date"] <= end_date.isoformat()
+]
 
 if not records:
     st.info("No records match this filter.")
     st.stop()
 
+# Reset pagination back to the first page whenever any filter changes.
+current_filter_key = (status_filter, type_filter, start_date, end_date)
+if st.session_state.get("manage_records_filter_key") != current_filter_key:
+    st.session_state["manage_records_filter_key"] = current_filter_key
+    st.session_state["manage_records_page_size"] = 10
+
+if "manage_records_page_size" not in st.session_state:
+    st.session_state["manage_records_page_size"] = 10
+
+st.caption(f"{len(records)} record(s) match this filter.")
+
 st.divider()
+
+visible_records = records[: st.session_state["manage_records_page_size"]]
 
 # --- Bulk delete controls ---
 if "selected_ids" not in st.session_state:
@@ -35,7 +54,7 @@ if "selected_ids" not in st.session_state:
 top_col1, top_col2 = st.columns([3, 1])
 select_all = top_col1.checkbox("Select all shown below")
 if select_all:
-    st.session_state["selected_ids"] = {r["id"] for r in records}
+    st.session_state["selected_ids"] = {r["id"] for r in visible_records}
 elif not select_all and st.session_state.get("_prev_select_all"):
     st.session_state["selected_ids"] = set()
 st.session_state["_prev_select_all"] = select_all
@@ -66,7 +85,7 @@ if st.session_state.get("confirm_bulk_delete"):
 st.divider()
 
 # --- Record list ---
-for txn in records:
+for txn in visible_records:
     cat_name = txn["categories"]["name"] if txn["categories"] else "Uncategorized"
 
     with st.container(border=True):
@@ -160,3 +179,10 @@ for txn in records:
             if cc2.button("Cancel", key=f"confirm_no_{txn['id']}"):
                 st.session_state["confirm_single_delete"] = None
                 st.rerun()
+
+if len(records) > len(visible_records):
+    st.divider()
+    remaining = len(records) - len(visible_records)
+    if st.button(f"Show More ({remaining} remaining)"):
+        st.session_state["manage_records_page_size"] += 10
+        st.rerun()
