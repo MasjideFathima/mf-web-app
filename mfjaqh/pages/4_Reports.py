@@ -15,15 +15,31 @@ if not data:
 df = pd.DataFrame(data)
 df["category_name"] = df["categories"].apply(lambda c: c["name"] if c else "Uncategorized")
 df["amount"] = df["amount"].astype(float)
-df["payment_method"] = df.get("payment_method", "cash").fillna("cash")
+if "payment_method" not in df.columns:
+    df["payment_method"] = "cash"
+else:
+    df["payment_method"] = df["payment_method"].fillna("cash")
 df["txn_date"] = pd.to_datetime(df["txn_date"])
+df["donor_name"] = df.get("donor_name", "").fillna("") if "donor_name" in df.columns else ""
+df["donor_phone"] = df.get("donor_phone", "").fillna("") if "donor_phone" in df.columns else ""
 
 col1, col2 = st.columns(2)
 start_date = col1.date_input("From", value=date.today() - timedelta(days=30))
 end_date = col2.date_input("To", value=date.today())
 
+search = st.text_input("Search (donor name, receipt number)", placeholder="e.g. Ahmed or R-1023")
+
 mask = (df["txn_date"] >= pd.Timestamp(start_date)) & (df["txn_date"] <= pd.Timestamp(end_date))
-filtered = df.loc[mask, ["txn_date", "type", "category_name", "amount", "payment_method", "receipt_number", "description"]]
+filtered = df.loc[mask, ["txn_date", "type", "category_name", "amount", "payment_method",
+                          "receipt_number", "donor_name", "donor_phone", "description"]]
+
+if search:
+    search_lower = search.lower()
+    filtered = filtered[
+        filtered["donor_name"].str.lower().str.contains(search_lower, na=False)
+        | filtered["receipt_number"].fillna("").str.lower().str.contains(search_lower, na=False)
+    ]
+
 filtered = filtered.sort_values("txn_date")
 
 st.dataframe(filtered, use_container_width=True, hide_index=True)
