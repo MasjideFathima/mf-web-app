@@ -16,6 +16,7 @@ with st.form("add_txn_form", clear_on_submit=True):
     category_name = st.selectbox("Category", cat_names)
     amount = st.number_input("Amount (₹)", min_value=0.0, step=1.0)
     txn_date = st.date_input("Date", value=date.today())
+    payment_method = st.radio("Payment Method", ["Cash", "GPay/Bank"], horizontal=True, index=0)
     receipt_number = ""
     donor_name = ""
     donor_phone = ""
@@ -57,6 +58,7 @@ with st.form("add_txn_form", clear_on_submit=True):
             "receipt_number": receipt_number or None,
             "donor_name": donor_name or None,
             "donor_phone": donor_phone or None,
+            "payment_method": "bank" if payment_method == "GPay/Bank" else "cash",
             "description": description,
             "photo_url": photo_url,
             "submitted_by": st.session_state["user_id"],
