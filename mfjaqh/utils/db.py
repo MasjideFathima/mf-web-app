@@ -58,7 +58,9 @@ def get_transactions(status: str | None = None, submitted_by: str | None = None)
         query = query.eq("status", status)
     if submitted_by:
         query = query.eq("submitted_by", submitted_by)
-    return query.order("txn_date", desc=True).execute().data
+    # Secondary sort by created_at ensures same-date records show newest-added
+    # first too, instead of falling back to insertion order for ties.
+    return query.order("txn_date", desc=True).order("created_at", desc=True).execute().data
 
 
 def get_transaction(txn_id: str):
