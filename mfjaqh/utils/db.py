@@ -157,6 +157,45 @@ def upload_photo(file_bytes: bytes, filename: str, content_type: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Storage monitoring (free tier: 500MB database, 1GB file storage)
+# ---------------------------------------------------------------------------
+def get_database_size_bytes() -> int | None:
+    """Requires the get_database_size_bytes() SQL function from schema.sql.
+    Returns None if the function hasn't been created yet, rather than crashing."""
+    client = get_service_client()
+    try:
+        result = client.rpc("get_database_size_bytes").execute()
+        return int(result.data)
+    except Exception:
+        return None
+
+
+def get_storage_size_bytes() -> int:
+    """Sums the size of every file in the receipts bucket by paging through
+    the storage listing (Supabase returns at most 100 items per call)."""
+    client = get_service_client()
+    total = 0
+    offset = 0
+    limit = 100
+    while True:
+        try:
+            items = client.storage.from_(BUCKET_NAME).list(
+                options={"limit": limit, "offset": offset}
+            )
+        except Exception:
+            break
+        if not items:
+            break
+        for item in items:
+            metadata = item.get("metadata") or {}
+            total += metadata.get("size", 0) or 0
+        if len(items) < limit:
+            break
+        offset += limit
+    return total
+
+
+# ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
 def get_user_profile(auth_id: str):
