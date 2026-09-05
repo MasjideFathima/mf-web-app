@@ -100,3 +100,32 @@ create policy "members can view their own transactions"
 -- ============================================================
 -- alter table public.transactions add column if not exists payment_method text
 --     not null default 'cash' check (payment_method in ('cash', 'bank'));
+
+-- ============================================================
+-- Storage monitoring: exposes current database size in bytes so the app
+-- can warn before hitting Supabase's free tier 500MB database cap.
+-- Run this once (safe to re-run - "or replace" overwrites cleanly):
+-- ============================================================
+create or replace function public.get_database_size_bytes()
+returns bigint
+language sql
+security definer
+as $$
+  select pg_database_size(current_database());
+$$;
+
+grant execute on function public.get_database_size_bytes() to anon, authenticated, service_role;
+
+-- ============================================================
+-- Allow deleting a user even if they've submitted/approved transactions.
+-- Historical records are kept (financial history isn't erased) but their
+-- submitted_by/approved_by becomes NULL, shown as "Unknown" in the app.
+-- Run this once before using the delete-user feature:
+-- ============================================================
+alter table public.transactions drop constraint if exists transactions_submitted_by_fkey;
+alter table public.transactions add constraint transactions_submitted_by_fkey
+    foreign key (submitted_by) references public.users(id) on delete set null;
+
+alter table public.transactions drop constraint if exists transactions_approved_by_fkey;
+alter table public.transactions add constraint transactions_approved_by_fkey
+    foreign key (approved_by) references public.users(id) on delete set null;
