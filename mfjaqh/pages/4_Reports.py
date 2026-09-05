@@ -28,12 +28,18 @@ if "report_filters" not in st.session_state:
         "start_date": date.today() - timedelta(days=30),
         "end_date": date.today(),
         "search": "",
+        "type": "All",
     }
 
 with st.form("report_filter_form"):
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns([1, 1, 1])
     start_date_input = col1.date_input("From", value=st.session_state["report_filters"]["start_date"])
     end_date_input = col2.date_input("To", value=st.session_state["report_filters"]["end_date"])
+    type_options = ["All", "income", "expense"]
+    type_input = col3.selectbox(
+        "Type", type_options,
+        index=type_options.index(st.session_state["report_filters"]["type"]),
+    )
     search_input = st.text_input(
         "Search (donor name, receipt number)",
         value=st.session_state["report_filters"]["search"],
@@ -46,16 +52,21 @@ with st.form("report_filter_form"):
             "start_date": start_date_input,
             "end_date": end_date_input,
             "search": search_input,
+            "type": type_input,
         }
 
 filters = st.session_state["report_filters"]
 start_date = filters["start_date"]
 end_date = filters["end_date"]
 search = filters["search"]
+type_filter = filters["type"]
 
 mask = (df["txn_date"] >= pd.Timestamp(start_date)) & (df["txn_date"] <= pd.Timestamp(end_date))
 filtered = df.loc[mask, ["txn_date", "type", "category_name", "amount", "payment_method",
                           "receipt_number", "donor_name", "donor_phone", "description"]]
+
+if type_filter != "All":
+    filtered = filtered[filtered["type"] == type_filter]
 
 if search:
     search_lower = search.lower()
