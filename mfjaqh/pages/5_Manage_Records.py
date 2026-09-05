@@ -32,6 +32,16 @@ if not records:
     st.info("No records match this filter.")
     st.stop()
 
+# Drop any selected id that no longer exists in the current results (e.g. it
+# was deleted individually while also checked for bulk delete) - prevents a
+# stale "Delete Selected" confirmation from lingering for a record that's
+# already gone.
+if "selected_ids" in st.session_state:
+    existing_ids = {r["id"] for r in records}
+    st.session_state["selected_ids"] &= existing_ids
+    if not st.session_state["selected_ids"]:
+        st.session_state["confirm_bulk_delete"] = False
+
 # Reset pagination back to the first page whenever any filter changes.
 current_filter_key = (status_filter, type_filter, start_date, end_date)
 if st.session_state.get("manage_records_filter_key") != current_filter_key:
@@ -174,6 +184,9 @@ for txn in visible_records:
             if cc1.button("Yes, delete", key=f"confirm_yes_{txn['id']}", type="primary"):
                 delete_transaction(txn["id"])
                 st.session_state["confirm_single_delete"] = None
+                st.session_state["selected_ids"].discard(txn["id"])
+                if not st.session_state["selected_ids"]:
+                    st.session_state["confirm_bulk_delete"] = False
                 st.session_state["manage_feedback"] = ("success", "Record deleted.")
                 st.rerun()
             if cc2.button("Cancel", key=f"confirm_no_{txn['id']}"):
