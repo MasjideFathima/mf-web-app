@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
+from datetime import date as date_cls
 from utils.auth import require_admin
-from utils.db import get_transactions, delete_transaction, delete_transactions
+from utils.db import get_transactions, delete_transaction, delete_transactions, update_transaction, get_categories
 
 require_admin()
 st.title("🗑️ Manage Records")
-st.caption("Delete income/expense records. This is permanent and cannot be undone.")
+st.caption("Edit or delete income/expense records. Deletion is permanent and cannot be undone.")
 
 # Feedback from the previous action survives the rerun below.
 if "manage_feedback" in st.session_state:
@@ -95,8 +96,58 @@ for txn in records:
         with c3:
             if txn.get("photo_url"):
                 st.image(txn["photo_url"], width=80)
-            if st.button("Delete", key=f"delete_{txn['id']}"):
+            ec1, ec2 = st.columns(2)
+            if ec1.button("Edit", key=f"edit_{txn['id']}"):
+                st.session_state["editing_id"] = (
+                    None if st.session_state.get("editing_id") == txn["id"] else txn["id"]
+                )
+                st.rerun()
+            if ec2.button("Delete", key=f"delete_{txn['id']}"):
                 st.session_state["confirm_single_delete"] = txn["id"]
+
+        if st.session_state.get("editing_id") == txn["id"]:
+            categories = get_categories(txn["type"])
+            cat_names = [c["name"] for c in categories]
+            current_cat_index = next(
+                (i for i, c in enumerate(categories) if c["id"] == txn["category_id"]), 0
+            )
+
+            with st.form(f"edit_form_{txn['id']}"):
+                st.write("**Edit Record**")
+                new_category_name = st.selectbox("Category", cat_names, index=current_cat_index)
+                new_amount = st.number_input("Amount (₹)", min_value=0.0, value=float(txn["amount"]), step=1.0)
+                new_date = st.date_input(
+                    "Date",
+                    value=pd.to_datetime(txn["txn_date"]).date() if txn.get("txn_date") else date_cls.today(),
+                )
+                new_payment_method = st.radio(
+                    "Payment Method", ["Cash", "GPay/Bank"], horizontal=True,
+                    index=0 if txn.get("payment_method", "cash") == "cash" else 1,
+                )
+                new_receipt_number = st.text_input("Receipt Number", value=txn.get("receipt_number") or "")
+                new_donor_name = st.text_input("Donor Name", value=txn.get("donor_name") or "")
+                new_donor_phone = st.text_input("Donor Phone", value=txn.get("donor_phone") or "")
+                new_description = st.text_area("Description", value=txn.get("description") or "")
+
+                save_col, cancel_col = st.columns(2)
+                if save_col.form_submit_button("Save Changes", type="primary"):
+                    new_category_id = next(c["id"] for c in categories if c["name"] == new_category_name)
+                    update_transaction(txn["id"], {
+                        "category_id": new_category_id,
+                        "amount": new_amount,
+                        "txn_date": new_date.isoformat(),
+                        "payment_method": "bank" if new_payment_method == "GPay/Bank" else "cash",
+                        "receipt_number": new_receipt_number or None,
+                        "donor_name": new_donor_name or None,
+                        "donor_phone": new_donor_phone or None,
+                        "description": new_description,
+                    })
+                    st.session_state["editing_id"] = None
+                    st.session_state["manage_feedback"] = ("success", "Record updated.")
+                    st.rerun()
+                if cancel_col.form_submit_button("Cancel"):
+                    st.session_state["editing_id"] = None
+                    st.rerun()
 
         if st.session_state.get("confirm_single_delete") == txn["id"]:
             st.warning("Permanently delete this record? This cannot be undone.")
