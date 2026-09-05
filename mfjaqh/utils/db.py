@@ -214,3 +214,57 @@ def create_user_account(email: str, password: str, name: str, phone: str, role: 
         return False, f"Login was created but profile setup failed, so it was rolled back: {e}"
 
     return True, "User created successfully."
+
+
+def verify_password(email: str, password: str) -> bool:
+    """Confirms a password is correct by attempting a real sign-in.
+    Used before allowing a password change - never store/compare passwords ourselves."""
+    client = get_anon_client()
+    try:
+        result = client.auth.sign_in_with_password({"email": email, "password": password})
+        return result.user is not None
+    except Exception:
+        return False
+
+
+def update_own_password(user_id: str, new_password: str) -> tuple[bool, str]:
+    client = get_service_client()
+    try:
+        client.auth.admin.update_user_by_id(user_id, {"password": new_password})
+        return True, "Password updated."
+    except Exception as e:
+        return False, f"Could not update password: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Edit transaction (fix typos without delete + re-add)
+# ---------------------------------------------------------------------------
+def update_transaction(txn_id: str, data: dict):
+    """data may include any of: category_id, amount, txn_date, receipt_number,
+    donor_name, donor_phone, payment_method, description."""
+    client = get_service_client()
+    return client.table("transactions").update(data).eq("id", txn_id).execute()
+
+
+# ---------------------------------------------------------------------------
+# Backup / export (Supabase free tier has no automatic backups)
+# ---------------------------------------------------------------------------
+def get_all_transactions_for_backup():
+    client = get_service_client()
+    return client.table("transactions").select(
+        "*, categories(name, type), users!transactions_submitted_by_fkey(name)"
+    ).order("txn_date", desc=True).execute().data
+
+
+# ---------------------------------------------------------------------------
+# Donor lookup - total donations by phone or name (partial match)
+# ---------------------------------------------------------------------------
+def search_donor_transactions(query: str):
+    client = get_service_client()
+    query = query.strip()
+    result = client.table("transactions").select(
+        "*, categories(name, type)"
+    ).eq("type", "income").eq("status", "approved").or_(
+        f"donor_name.ilike.%{query}%,donor_phone.ilike.%{query}%"
+    ).order("txn_date", desc=True).execute()
+    return result.data
