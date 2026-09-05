@@ -8,7 +8,9 @@ Two clients are used on purpose:
                        Community Cloud runs the whole app server-side, that's safe
                        as long as it only ever lives in st.secrets.
 """
+import io
 import streamlit as st
+from PIL import Image
 from supabase import create_client, Client
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -126,12 +128,28 @@ def _delete_photo_by_url(photo_url: str):
 # ---------------------------------------------------------------------------
 # Photo storage (Supabase Storage bucket, not DB blobs)
 # ---------------------------------------------------------------------------
+def compress_image(file_bytes: bytes, max_dimension: int = 900, quality: int = 45) -> bytes:
+    """Resizes and re-encodes as JPEG, prioritizing small file size.
+    Typically turns a 3-4MB phone photo into 80-200KB."""
+    img = Image.open(io.BytesIO(file_bytes))
+    img = img.convert("RGB")  # drops alpha/EXIF, ensures JPEG compatibility
+    img.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=quality, optimize=True)
+    return buffer.getvalue()
+
+
 def upload_photo(file_bytes: bytes, filename: str, content_type: str) -> str:
-    """Uploads to the 'receipts' bucket and returns a public URL."""
+    """Compresses (resize + re-encode as JPEG) then uploads to the 'receipts'
+    bucket, returning a public URL. Compression drastically cuts storage use
+    since Supabase's free tier caps total file storage at 1GB."""
     client = get_service_client()
-    path = f"{filename}"
+    compressed_bytes = compress_image(file_bytes)
+    # Always save as .jpg since compression re-encodes to JPEG regardless of input format.
+    base_name = filename.rsplit(".", 1)[0]
+    path = f"{base_name}.jpg"
     client.storage.from_(BUCKET_NAME).upload(
-        path, file_bytes, {"content-type": content_type, "upsert": "true"}
+        path, compressed_bytes, {"content-type": "image/jpeg", "upsert": "true"}
     )
     return client.storage.from_(BUCKET_NAME).get_public_url(path)
 
