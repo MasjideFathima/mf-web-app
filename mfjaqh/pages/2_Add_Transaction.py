@@ -8,6 +8,13 @@ from utils.whatsapp import send_whatsapp_notification
 require_login()
 st.title("➕ Add Transaction")
 
+# Show a transient toast for the result of the last submission, then clear it.
+# Toasts auto-dismiss after a few seconds, unlike st.success/st.warning banners
+# which would otherwise stick around and bleed into the next entry.
+if "add_txn_toast" in st.session_state:
+    icon, text = st.session_state.pop("add_txn_toast")
+    st.toast(text, icon=icon)
+
 txn_type = st.radio("Type", ["income", "expense"], horizontal=True)
 categories = get_categories(txn_type)
 cat_names = [c["name"] for c in categories]
@@ -67,7 +74,7 @@ with st.form("add_txn_form", clear_on_submit=True):
         insert_transaction(record)
 
         if is_admin():
-            st.success("Transaction recorded and approved.")
+            toast_lines = ["Transaction recorded and approved."]
             if txn_type == "income" and donor_phone:
                 sent, msg = send_whatsapp_notification(
                     phone=donor_phone,
@@ -78,8 +85,13 @@ with st.form("add_txn_form", clear_on_submit=True):
                     category_name=category_name,
                 )
                 if sent:
-                    st.info("WhatsApp confirmation sent to donor.")
+                    toast_lines.append("WhatsApp confirmation sent to donor.")
+                    st.session_state["add_txn_toast"] = ("✅", " ".join(toast_lines))
                 else:
-                    st.warning(f"Recorded, but WhatsApp notification failed: {msg}")
+                    st.session_state["add_txn_toast"] = ("⚠️", f"Recorded, but WhatsApp failed: {msg}")
+            else:
+                st.session_state["add_txn_toast"] = ("✅", toast_lines[0])
         else:
-            st.success("Submitted! An admin will review and approve it.")
+            st.session_state["add_txn_toast"] = ("✅", "Submitted! An admin will review and approve it.")
+
+        st.rerun()
