@@ -15,6 +15,7 @@ if not data:
 df = pd.DataFrame(data)
 df["category_name"] = df["categories"].apply(lambda c: c["name"] if c else "Uncategorized")
 df["amount"] = df["amount"].astype(float)
+df["payment_method"] = df.get("payment_method", "cash").fillna("cash")
 df["txn_date"] = pd.to_datetime(df["txn_date"])
 
 col1, col2 = st.columns(2)
@@ -22,7 +23,7 @@ start_date = col1.date_input("From", value=date.today() - timedelta(days=30))
 end_date = col2.date_input("To", value=date.today())
 
 mask = (df["txn_date"] >= pd.Timestamp(start_date)) & (df["txn_date"] <= pd.Timestamp(end_date))
-filtered = df.loc[mask, ["txn_date", "type", "category_name", "amount", "receipt_number", "description"]]
+filtered = df.loc[mask, ["txn_date", "type", "category_name", "amount", "payment_method", "receipt_number", "description"]]
 filtered = filtered.sort_values("txn_date")
 
 st.dataframe(filtered, use_container_width=True, hide_index=True)
