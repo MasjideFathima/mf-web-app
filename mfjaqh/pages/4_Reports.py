@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date
 from utils.auth import require_login
 from utils.db import get_transactions
 
@@ -25,11 +25,13 @@ df["donor_phone"] = df.get("donor_phone", "").fillna("") if "donor_phone" in df.
 
 if "report_filters" not in st.session_state:
     st.session_state["report_filters"] = {
-        "start_date": date.today() - timedelta(days=30),
+        "start_date": date.today(),
         "end_date": date.today(),
         "search": "",
         "type": "All",
     }
+elif "type" not in st.session_state["report_filters"]:
+    st.session_state["report_filters"]["type"] = "All"
 
 with st.form("report_filter_form"):
     col1, col2, col3 = st.columns([1, 1, 1])
