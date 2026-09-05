@@ -42,6 +42,7 @@ create table if not exists public.transactions (
     receipt_number text,          -- only meaningful for income, free text
     donor_name text,               -- name of person donating (for income entries)
     donor_phone text,              -- WhatsApp/mobile number to notify on approval
+    payment_method text not null default 'cash' check (payment_method in ('cash', 'bank')),
     description text,
     photo_url text,                -- link into Supabase Storage, not a blob
     status text not null default 'pending' check (status in ('pending','approved','rejected')),
@@ -93,3 +94,9 @@ create policy "members can view their own transactions"
 -- ============================================================
 -- alter table public.transactions add column if not exists donor_name text;
 -- alter table public.transactions add column if not exists donor_phone text;
+
+-- ============================================================
+-- If you already ran schema.sql before adding Cash/Bank tracking, run this:
+-- ============================================================
+-- alter table public.transactions add column if not exists payment_method text
+--     not null default 'cash' check (payment_method in ('cash', 'bank'));
