@@ -15,6 +15,7 @@ if not data:
 df = pd.DataFrame(data)
 df["category_name"] = df["categories"].apply(lambda c: c["name"] if c else "Uncategorized")
 df["amount"] = df["amount"].astype(float)
+df["payment_method"] = df.get("payment_method", "cash").fillna("cash")
 
 total_income = df.loc[df["type"] == "income", "amount"].sum()
 total_expense = df.loc[df["type"] == "expense", "amount"].sum()
@@ -25,10 +26,28 @@ col1.metric("Total Income", f"₹{total_income:,.2f}")
 col2.metric("Total Expense", f"₹{total_expense:,.2f}")
 col3.metric("Balance", f"₹{balance:,.2f}")
 
+st.subheader("Balance by Payment Method")
+
+
+def method_balance(method: str) -> float:
+    subset = df[df["payment_method"] == method]
+    income = subset.loc[subset["type"] == "income", "amount"].sum()
+    expense = subset.loc[subset["type"] == "expense", "amount"].sum()
+    return income - expense
+
+
+cash_balance = method_balance("cash")
+bank_balance = method_balance("bank")
+
+pcol1, pcol2, pcol3 = st.columns(3)
+pcol1.metric("💵 Cash in Hand", f"₹{cash_balance:,.2f}")
+pcol2.metric("🏦 Bank / GPay", f"₹{bank_balance:,.2f}")
+pcol3.metric("Total (Cash + Bank)", f"₹{cash_balance + bank_balance:,.2f}")
+
 st.subheader("By Category")
 by_cat = df.groupby(["type", "category_name"])["amount"].sum().reset_index()
 st.dataframe(by_cat, use_container_width=True, hide_index=True)
 
 st.subheader("Recent Transactions")
-recent = df[["txn_date", "type", "category_name", "amount", "receipt_number", "description"]].head(20)
+recent = df[["txn_date", "type", "category_name", "amount", "payment_method", "receipt_number", "description"]].head(20)
 st.dataframe(recent, use_container_width=True, hide_index=True)
