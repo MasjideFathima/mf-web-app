@@ -143,3 +143,56 @@ def get_user_profile(auth_id: str):
     client = get_service_client()
     result = client.table("users").select("*").eq("id", auth_id).execute()
     return result.data[0] if result.data else None
+
+
+def get_all_users():
+    client = get_service_client()
+    return client.table("users").select("*").order("name").execute().data
+
+
+def email_exists_in_users_table(email: str) -> bool:
+    """Best-effort duplicate check against auth users by listing them.
+    (Supabase Admin API has no direct get-by-email in supabase-py, so we
+    rely on the create_user call itself to reject true duplicates too.)"""
+    client = get_service_client()
+    try:
+        result = client.auth.admin.list_users()
+        return any(u.email == email for u in result)
+    except Exception:
+        return False
+
+
+def create_user_account(email: str, password: str, name: str, phone: str, role: str):
+    """Creates the auth user (Supabase Admin API, bypasses email confirmation)
+    and a matching row in public.users. Returns (success, message)."""
+    client = get_service_client()
+    try:
+        auth_result = client.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True,  # skip confirmation email - admin is vouching for this user
+        })
+    except Exception as e:
+        return False, f"Could not create login: {e}"
+
+    new_user = auth_result.user
+    if not new_user:
+        return False, "Account creation failed for an unknown reason."
+
+    try:
+        client.table("users").insert({
+            "id": new_user.id,
+            "name": name,
+            "phone": phone or None,
+            "role": role,
+        }).execute()
+    except Exception as e:
+        # Roll back the auth user so we don't end up with an orphaned login
+        # that has no profile row.
+        try:
+            client.auth.admin.delete_user(new_user.id)
+        except Exception:
+            pass
+        return False, f"Login was created but profile setup failed, so it was rolled back: {e}"
+
+    return True, "User created successfully."
