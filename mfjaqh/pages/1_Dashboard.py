@@ -24,28 +24,39 @@ total_income = df.loc[df["type"] == "income", "amount"].sum()
 total_expense = df.loc[df["type"] == "expense", "amount"].sum()
 balance = total_income - total_expense
 
+
+def amount_for(txn_type: str, method: str) -> float:
+    subset = df[(df["type"] == txn_type) & (df["payment_method"] == method)]
+    return subset["amount"].sum()
+
+
+income_cash = amount_for("income", "cash")
+income_bank = amount_for("income", "bank")
+expense_cash = amount_for("expense", "cash")
+expense_bank = amount_for("expense", "bank")
+cash_balance = income_cash - expense_cash
+bank_balance = income_bank - expense_bank
+
+st.subheader("Overall")
 col1, col2, col3 = st.columns(3)
-col1.metric("Total Income", f"₹{total_income:,.2f}")
-col2.metric("Total Expense", f"₹{total_expense:,.2f}")
-col3.metric("Balance", f"₹{balance:,.2f}")
+col1.metric("Total Income (Cash + Bank)", f"₹{total_income:,.2f}")
+col2.metric("Total Expense (Cash + Bank)", f"₹{total_expense:,.2f}")
+col3.metric("Net Balance", f"₹{balance:,.2f}")
+
+st.subheader("Income by Payment Method")
+icol1, icol2 = st.columns(2)
+icol1.metric("💵 Income - Cash", f"₹{income_cash:,.2f}")
+icol2.metric("🏦 Income - Bank/GPay", f"₹{income_bank:,.2f}")
+
+st.subheader("Expense by Payment Method")
+ecol1, ecol2 = st.columns(2)
+ecol1.metric("💵 Expense - Cash", f"₹{expense_cash:,.2f}")
+ecol2.metric("🏦 Expense - Bank/GPay", f"₹{expense_bank:,.2f}")
 
 st.subheader("Balance by Payment Method")
-
-
-def method_balance(method: str) -> float:
-    subset = df[df["payment_method"] == method]
-    income = subset.loc[subset["type"] == "income", "amount"].sum()
-    expense = subset.loc[subset["type"] == "expense", "amount"].sum()
-    return income - expense
-
-
-cash_balance = method_balance("cash")
-bank_balance = method_balance("bank")
-
-pcol1, pcol2, pcol3 = st.columns(3)
+pcol1, pcol2 = st.columns(2)
 pcol1.metric("💵 Cash in Hand", f"₹{cash_balance:,.2f}")
-pcol2.metric("🏦 Bank / GPay", f"₹{bank_balance:,.2f}")
-pcol3.metric("Total (Cash + Bank)", f"₹{cash_balance + bank_balance:,.2f}")
+pcol2.metric("🏦 Cash in Bank", f"₹{bank_balance:,.2f}")
 
 st.subheader("By Category")
 by_cat = df.groupby(["type", "category_name"])["amount"].sum().reset_index()
