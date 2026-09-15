@@ -9,7 +9,7 @@ business phone number, this sends to any number dynamically.
 Requires these Streamlit secrets:
     WHATSAPP_PHONE_NUMBER_ID   - from Meta App Dashboard > WhatsApp > API Setup
     WHATSAPP_ACCESS_TOKEN      - permanent System User token (not the 24h temp one)
-    WHATSAPP_TEMPLATE_NAME     - the approved template name, e.g. "donation_receipt"
+    WHATSAPP_TEMPLATE_NAME     - the approved template name, e.g. "donation_reply"
 """
 import re
 import requests
@@ -34,7 +34,10 @@ def _normalize_phone(phone: str) -> str | None:
 def send_whatsapp_notification(phone: str, donor_name: str, txn_type: str,
                                  amount: float, receipt_number: str | None,
                                  category_name: str) -> tuple[bool, str]:
-    """Sends the approval notification. Returns (success, message)."""
+    """Sends the approval notification. Returns (success, message).
+    receipt_number is accepted but not currently sent - the approved
+    donation_reply template only has 3 variables (name, category, amount)
+    since receipt numbers aren't always entered."""
     if not phone:
         return False, "No phone number provided, skipped."
 
@@ -44,7 +47,7 @@ def send_whatsapp_notification(phone: str, donor_name: str, txn_type: str,
 
     phone_number_id = st.secrets.get("WHATSAPP_PHONE_NUMBER_ID")
     access_token = st.secrets.get("WHATSAPP_ACCESS_TOKEN")
-    template_name = st.secrets.get("WHATSAPP_TEMPLATE_NAME", "donation_receipt")
+    template_name = st.secrets.get("WHATSAPP_TEMPLATE_NAME", "donation_reply")
     template_lang = st.secrets.get("WHATSAPP_TEMPLATE_LANG", "en_US")
 
     if not phone_number_id or not access_token:
@@ -57,14 +60,13 @@ def send_whatsapp_notification(phone: str, donor_name: str, txn_type: str,
     }
 
     # hello_world (Meta's default test template) takes zero parameters.
-    # Your own approved template (e.g. donation_receipt) takes the 4 below.
+    # donation_reply takes 3: donor name, category, amount.
     components = []
     if template_name != "hello_world":
         body_params = [
             {"type": "text", "text": donor_name or "Donor"},
             {"type": "text", "text": category_name},
             {"type": "text", "text": f"{amount:,.2f}"},
-            {"type": "text", "text": receipt_number or "N/A"},
         ]
         components = [{"type": "body", "parameters": body_params}]
 
