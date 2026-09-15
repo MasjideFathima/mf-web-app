@@ -21,7 +21,9 @@ cat_names = [c["name"] for c in categories]
 
 with st.form("add_txn_form", clear_on_submit=True):
     category_name = st.selectbox("Category", cat_names)
-    amount = st.number_input("Amount (₹)", min_value=0.0, step=1.0)
+    amount = st.number_input(
+        "Amount (₹)", min_value=0.0, step=1.0, value=None, placeholder="Enter amount"
+    )
     txn_date = st.date_input("Date", value=date.today())
     payment_method = st.radio("Payment Method", ["Cash", "GPay/Bank"], horizontal=True, index=0)
     receipt_number = ""
@@ -42,8 +44,8 @@ with st.form("add_txn_form", clear_on_submit=True):
     submitted = st.form_submit_button("Submit")
 
     if submitted:
-        if amount <= 0:
-            st.error("Amount must be greater than 0.")
+        if amount is None or amount <= 0:
+            st.error("Please enter an amount greater than 0.")
             st.stop()
         if txn_type == "income" and receipt_number and receipt_number_exists(receipt_number):
             st.error(f"Receipt number '{receipt_number}' has already been recorded. Check for duplicate entry.")
@@ -88,7 +90,8 @@ with st.form("add_txn_form", clear_on_submit=True):
                     toast_lines.append("WhatsApp confirmation sent to donor.")
                     st.session_state["add_txn_toast"] = ("✅", " ".join(toast_lines))
                 else:
-                    st.session_state["add_txn_toast"] = ("⚠️", f"Recorded, but WhatsApp failed: {msg}")
+                    short_msg = msg if len(msg) <= 80 else msg[:77] + "..."
+                    st.session_state["add_txn_toast"] = ("⚠️", f"Recorded, but WhatsApp failed: {short_msg}")
             else:
                 st.session_state["add_txn_toast"] = ("✅", toast_lines[0])
         else:
