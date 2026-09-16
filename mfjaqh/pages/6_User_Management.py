@@ -5,6 +5,7 @@ from utils.auth import require_admin
 from utils.db import create_user_account, get_all_users, delete_user_account, count_admins
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="User Management", page_icon="👥")
 apply_soft_theme()
 require_admin()
 st.title("👥 User Management")

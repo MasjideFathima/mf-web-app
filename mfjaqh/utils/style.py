@@ -5,6 +5,22 @@ apply_soft_theme(). Keeps the look consistent without repeating CSS in each file
 import streamlit as st
 
 
+def styled_metric(label: str, value: str, color: str = "#164F37"):
+    """A metric card matching the theme, with the value in a specific color
+    (green for income, red for expense, etc.) - st.metric can't be colored
+    per-instance, so this renders the same look via custom HTML."""
+    st.markdown(
+        f"""
+        <div style="background:#FFFFFF; border:1px solid #E6D9B8; border-left:4px solid #C9A227;
+                    border-radius:12px; padding:12px 16px; margin-bottom:8px;">
+            <div style="font-size:13px; color:#6b6b5c; margin-bottom:6px;">{label}</div>
+            <div style="font-size:28px; font-weight:800; color:{color};">{value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def apply_soft_theme():
     st.markdown(
         """

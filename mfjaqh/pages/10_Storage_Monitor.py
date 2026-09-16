@@ -3,6 +3,7 @@ from utils.auth import require_admin
 from utils.db import get_database_size_bytes, get_storage_size_bytes
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="Storage Monitor", page_icon="📦")
 apply_soft_theme()
 require_admin()
 st.title("📦 Storage Monitor")

@@ -3,6 +3,7 @@ from utils.auth import require_login
 from utils.db import verify_password, update_own_password
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="Change Password", page_icon="🔑")
 apply_soft_theme()
 require_login()
 st.title("🔑 Change Password")
