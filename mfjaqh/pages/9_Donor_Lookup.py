@@ -4,6 +4,7 @@ from utils.auth import require_login
 from utils.db import search_donor_transactions
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="Donor Lookup", page_icon="🔍")
 apply_soft_theme()
 require_login()
 st.title("🔍 Donor Lookup")
