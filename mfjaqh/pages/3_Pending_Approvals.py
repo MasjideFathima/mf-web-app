@@ -4,6 +4,7 @@ from utils.db import get_transactions, approve_transaction, reject_transaction
 from utils.whatsapp import send_whatsapp_notification
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="Pending Approvals", page_icon="✅")
 apply_soft_theme()
 require_admin()
 st.title("✅ Pending Approvals")
