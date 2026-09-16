@@ -2,7 +2,9 @@ import streamlit as st
 import pandas as pd
 from utils.auth import require_login
 from utils.db import search_donor_transactions
+from utils.style import apply_soft_theme
 
+apply_soft_theme()
 require_login()
 st.title("🔍 Donor Lookup")
 st.caption("Search by donor name or phone number to see their donation history.")
