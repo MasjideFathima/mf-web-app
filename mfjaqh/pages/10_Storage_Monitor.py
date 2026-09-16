@@ -1,7 +1,9 @@
 import streamlit as st
 from utils.auth import require_admin
 from utils.db import get_database_size_bytes, get_storage_size_bytes
+from utils.style import apply_soft_theme
 
+apply_soft_theme()
 require_admin()
 st.title("📦 Storage Monitor")
 st.caption("Tracks usage against Supabase's free tier limits (500MB database, 1GB file storage).")
