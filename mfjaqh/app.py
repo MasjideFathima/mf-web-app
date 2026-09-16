@@ -1,7 +1,9 @@
 import streamlit as st
 from utils.auth import login, logout, is_logged_in
+from utils.style import apply_soft_theme
 
 st.set_page_config(page_title="Masjid-e-Fathima JAQH Tracker", page_icon="🕌", layout="centered")
+apply_soft_theme()
 
 st.title("🕌 Masjid-e-Fathima JAQH, Salem-1")
 st.caption("Income & Expense Tracker")
