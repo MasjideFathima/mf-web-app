@@ -9,6 +9,12 @@ def apply_soft_theme():
     st.markdown(
         """
         <style>
+        /* Headings in deep green, matching the approved mockup */
+        h1, h2, h3, [data-testid="stMarkdownContainer"] h1,
+        [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3 {
+            color: #164F37 !important;
+        }
+
         /* Softer, rounded containers (used for record cards throughout the app) */
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border-radius: 14px !important;
@@ -59,6 +65,13 @@ def apply_soft_theme():
         /* Sidebar page links: gold highlight on hover, green when active */
         section[data-testid="stSidebar"] a:hover {
             background-color: #E8D9A0 !important;
+        }
+        section[data-testid="stSidebar"] [aria-current="page"] {
+            background-color: #1F6F4D !important;
+        }
+        section[data-testid="stSidebar"] [aria-current="page"] span,
+        section[data-testid="stSidebar"] [aria-current="page"] p {
+            color: #FFFFFF !important;
         }
         </style>
         """,
