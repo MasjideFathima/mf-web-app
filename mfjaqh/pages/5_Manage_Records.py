@@ -3,7 +3,9 @@ import pandas as pd
 from datetime import date as date_cls, timedelta
 from utils.auth import require_admin
 from utils.db import get_transactions, delete_transaction, delete_transactions, update_transaction, get_categories
+from utils.style import apply_soft_theme
 
+apply_soft_theme()
 require_admin()
 st.title("🗑️ Manage Records")
 st.caption("Edit or delete income/expense records. Deletion is permanent and cannot be undone.")
