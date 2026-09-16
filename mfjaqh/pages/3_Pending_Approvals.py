@@ -2,7 +2,9 @@ import streamlit as st
 from utils.auth import require_admin
 from utils.db import get_transactions, approve_transaction, reject_transaction
 from utils.whatsapp import send_whatsapp_notification
+from utils.style import apply_soft_theme
 
+apply_soft_theme()
 require_admin()
 st.title("✅ Pending Approvals")
 
