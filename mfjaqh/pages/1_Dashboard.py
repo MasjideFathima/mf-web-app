@@ -20,6 +20,14 @@ if "payment_method" not in df.columns:
 else:
     df["payment_method"] = df["payment_method"].fillna("cash")
 
+method_filter = st.selectbox("Payment Method", ["All", "Cash", "Bank"], index=0)
+if method_filter != "All":
+    df = df[df["payment_method"] == method_filter.lower()]
+
+if df.empty:
+    st.info(f"No approved transactions for {method_filter}.")
+    st.stop()
+
 total_income = df.loc[df["type"] == "income", "amount"].sum()
 total_expense = df.loc[df["type"] == "expense", "amount"].sum()
 balance = total_income - total_expense
