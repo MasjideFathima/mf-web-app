@@ -14,15 +14,18 @@ if "manage_feedback" in st.session_state:
     getattr(st, level)(text)
 
 # --- Filters ---
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 status_filter = col1.selectbox("Status", ["approved", "pending", "rejected"], index=0)
 type_filter = col2.selectbox("Type", ["All", "income", "expense"])
-start_date = col3.date_input("From", value=date_cls.today() - timedelta(days=90))
-end_date = col4.date_input("To", value=date_cls.today())
+method_filter = col3.selectbox("Payment Method", ["All", "Cash", "Bank"])
+start_date = col4.date_input("From", value=date_cls.today() - timedelta(days=90))
+end_date = col5.date_input("To", value=date_cls.today())
 
 records = get_transactions(status=status_filter)
 if type_filter != "All":
     records = [r for r in records if r["type"] == type_filter]
+if method_filter != "All":
+    records = [r for r in records if (r.get("payment_method") or "cash") == method_filter.lower()]
 records = [
     r for r in records
     if r.get("txn_date") and start_date.isoformat() <= r["txn_date"] <= end_date.isoformat()
@@ -43,7 +46,7 @@ if "selected_ids" in st.session_state:
         st.session_state["confirm_bulk_delete"] = False
 
 # Reset pagination back to the first page whenever any filter changes.
-current_filter_key = (status_filter, type_filter, start_date, end_date)
+current_filter_key = (status_filter, type_filter, method_filter, start_date, end_date)
 if st.session_state.get("manage_records_filter_key") != current_filter_key:
     st.session_state["manage_records_filter_key"] = current_filter_key
     st.session_state["manage_records_page_size"] = 10
