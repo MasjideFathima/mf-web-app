@@ -5,6 +5,7 @@ from utils.auth import require_login
 from utils.db import get_transactions
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="Reports", page_icon="📄")
 apply_soft_theme()
 require_login()
 st.title("📄 Reports")
