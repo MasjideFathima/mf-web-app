@@ -6,6 +6,7 @@ from utils.db import get_categories, insert_transaction, upload_photo, receipt_n
 from utils.whatsapp import send_whatsapp_notification
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="Add Transaction", page_icon="➕")
 apply_soft_theme()
 require_login()
 st.title("➕ Add Transaction")
@@ -43,7 +44,7 @@ with st.form("add_txn_form", clear_on_submit=True):
     description = st.text_area("Description / Notes", placeholder="e.g. Purpose, etc.")
     photo = st.file_uploader("Upload photo of receipt/item (optional)", type=["jpg", "jpeg", "png"])
 
-    submitted = st.form_submit_button("Submit")
+    submitted = st.form_submit_button("Submit", type="primary")
 
     if submitted:
         if amount is None or amount <= 0:
