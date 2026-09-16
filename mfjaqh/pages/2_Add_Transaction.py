@@ -4,7 +4,9 @@ from datetime import date
 from utils.auth import require_login, is_admin
 from utils.db import get_categories, insert_transaction, upload_photo, receipt_number_exists
 from utils.whatsapp import send_whatsapp_notification
+from utils.style import apply_soft_theme
 
+apply_soft_theme()
 require_login()
 st.title("➕ Add Transaction")
 
