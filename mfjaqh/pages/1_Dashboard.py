@@ -52,13 +52,11 @@ GREEN = "#146C43"
 RED = "#C0392B"
 
 st.subheader("Overall")
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 with col1:
     styled_metric("Total Income (Cash + Bank)", f"₹{total_income:,.2f}", GREEN)
 with col2:
     styled_metric("Total Expense (Cash + Bank)", f"₹{total_expense:,.2f}", RED)
-with col3:
-    styled_metric("Net Balance", f"₹{balance:,.2f}", GREEN if balance >= 0 else RED)
 
 st.subheader("Income by Payment Method")
 icol1, icol2 = st.columns(2)
@@ -74,12 +72,15 @@ with ecol1:
 with ecol2:
     styled_metric("🏦 Expense - Bank/GPay", f"₹{expense_bank:,.2f}", RED)
 
-st.subheader("Balance by Payment Method")
-pcol1, pcol2 = st.columns(2)
-with pcol1:
-    styled_metric("💵 Cash in Hand", f"₹{cash_balance:,.2f}", GREEN if cash_balance >= 0 else RED)
-with pcol2:
-    styled_metric("🏦 Cash in Bank", f"₹{bank_balance:,.2f}", GREEN if bank_balance >= 0 else RED)
+st.subheader("💰 Balance Summary")
+with st.container(border=True, key="balance_summary"):
+    bcol1, bcol2, bcol3 = st.columns(3)
+    with bcol1:
+        styled_metric("Net Balance", f"₹{balance:,.2f}", GREEN if balance >= 0 else RED)
+    with bcol2:
+        styled_metric("💵 Cash in Hand", f"₹{cash_balance:,.2f}", GREEN if cash_balance >= 0 else RED)
+    with bcol3:
+        styled_metric("🏦 Cash in Bank", f"₹{bank_balance:,.2f}", GREEN if bank_balance >= 0 else RED)
 
 st.subheader("By Category")
 by_cat = df.groupby(["type", "category_name"])["amount"].sum().reset_index()
