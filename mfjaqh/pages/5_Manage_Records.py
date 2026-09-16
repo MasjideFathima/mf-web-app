@@ -5,6 +5,7 @@ from utils.auth import require_admin
 from utils.db import get_transactions, delete_transaction, delete_transactions, update_transaction, get_categories
 from utils.style import apply_soft_theme
 
+st.set_page_config(page_title="Manage Records", page_icon="🗑️")
 apply_soft_theme()
 require_admin()
 st.title("🗑️ Manage Records")
