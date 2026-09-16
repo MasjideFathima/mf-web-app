@@ -89,6 +89,16 @@ def apply_soft_theme():
         section[data-testid="stSidebar"] [aria-current="page"] p {
             color: #FFFFFF !important;
         }
+
+        /* Balance Summary: a distinct highlighted box, thicker green border and
+           a soft green tint, so it stands out from the regular gold-accented cards */
+        .st-key-balance_summary {
+            background-color: #EAF3ED !important;
+            border: 2px solid #1F6F4D !important;
+            border-radius: 16px !important;
+            box-shadow: 0 2px 10px rgba(31, 111, 77, 0.12) !important;
+            padding: 12px !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
