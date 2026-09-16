@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 from utils.auth import require_login
 from utils.db import get_transactions
-from utils.style import apply_soft_theme
+from utils.style import apply_soft_theme, styled_metric
 
+st.set_page_config(page_title="Dashboard", page_icon="📊")
 apply_soft_theme()
 require_login()
 st.title("📊 Dashboard")
@@ -47,26 +48,38 @@ expense_bank = amount_for("expense", "bank")
 cash_balance = income_cash - expense_cash
 bank_balance = income_bank - expense_bank
 
+GREEN = "#146C43"
+RED = "#C0392B"
+
 st.subheader("Overall")
 col1, col2, col3 = st.columns(3)
-col1.metric("Total Income (Cash + Bank)", f"₹{total_income:,.2f}")
-col2.metric("Total Expense (Cash + Bank)", f"₹{total_expense:,.2f}")
-col3.metric("Net Balance", f"₹{balance:,.2f}")
+with col1:
+    styled_metric("Total Income (Cash + Bank)", f"₹{total_income:,.2f}", GREEN)
+with col2:
+    styled_metric("Total Expense (Cash + Bank)", f"₹{total_expense:,.2f}", RED)
+with col3:
+    styled_metric("Net Balance", f"₹{balance:,.2f}", GREEN if balance >= 0 else RED)
 
 st.subheader("Income by Payment Method")
 icol1, icol2 = st.columns(2)
-icol1.metric("💵 Income - Cash", f"₹{income_cash:,.2f}")
-icol2.metric("🏦 Income - Bank/GPay", f"₹{income_bank:,.2f}")
+with icol1:
+    styled_metric("💵 Income - Cash", f"₹{income_cash:,.2f}", GREEN)
+with icol2:
+    styled_metric("🏦 Income - Bank/GPay", f"₹{income_bank:,.2f}", GREEN)
 
 st.subheader("Expense by Payment Method")
 ecol1, ecol2 = st.columns(2)
-ecol1.metric("💵 Expense - Cash", f"₹{expense_cash:,.2f}")
-ecol2.metric("🏦 Expense - Bank/GPay", f"₹{expense_bank:,.2f}")
+with ecol1:
+    styled_metric("💵 Expense - Cash", f"₹{expense_cash:,.2f}", RED)
+with ecol2:
+    styled_metric("🏦 Expense - Bank/GPay", f"₹{expense_bank:,.2f}", RED)
 
 st.subheader("Balance by Payment Method")
 pcol1, pcol2 = st.columns(2)
-pcol1.metric("💵 Cash in Hand", f"₹{cash_balance:,.2f}")
-pcol2.metric("🏦 Cash in Bank", f"₹{bank_balance:,.2f}")
+with pcol1:
+    styled_metric("💵 Cash in Hand", f"₹{cash_balance:,.2f}", GREEN if cash_balance >= 0 else RED)
+with pcol2:
+    styled_metric("🏦 Cash in Bank", f"₹{bank_balance:,.2f}", GREEN if bank_balance >= 0 else RED)
 
 st.subheader("By Category")
 by_cat = df.groupby(["type", "category_name"])["amount"].sum().reset_index()
