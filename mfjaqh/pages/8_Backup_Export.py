@@ -5,7 +5,9 @@ import zipfile
 from datetime import datetime
 from utils.auth import require_admin
 from utils.db import get_all_transactions_for_backup, get_all_users
+from utils.style import apply_soft_theme
 
+apply_soft_theme()
 require_admin()
 st.title("💾 Backup / Export")
 st.caption(
