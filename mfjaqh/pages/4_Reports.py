@@ -3,7 +3,9 @@ import pandas as pd
 from datetime import date
 from utils.auth import require_login
 from utils.db import get_transactions
+from utils.style import apply_soft_theme
 
+apply_soft_theme()
 require_login()
 st.title("📄 Reports")
 
